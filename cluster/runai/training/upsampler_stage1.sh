@@ -7,15 +7,15 @@ batch_size=2
 n_epochs=25
 adv_start=5
 eval_freq=1
-num_workers=8
+num_workers=32
 experiment="UPSAMPLER-AEKL"
 
 runai submit \
   --name upscaler-aekl-v0 \
   --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
-  --gpu 1 \
-  --cpu 4 \
+  --gpu 2 \
+  --cpu 16 \
   --large-shm \
   --run-as-user \
   --node-type "A100" \
