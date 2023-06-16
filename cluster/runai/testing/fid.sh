@@ -6,7 +6,7 @@ batch_size=1
 
 runai submit \
   --name brain-fid \
-  --image aicregistry:5000/wds20:ldm_brain \
+  --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
   --gpu 1 \
   --cpu 4 \

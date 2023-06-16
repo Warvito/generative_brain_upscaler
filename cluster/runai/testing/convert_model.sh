@@ -4,7 +4,7 @@ output_dir="/project/outputs/trained_models/"
 
 runai submit \
   --name brain-convert-model \
-  --image aicregistry:5000/wds20:ldm_brain \
+  --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
   --gpu 1 \
   --cpu 4 \

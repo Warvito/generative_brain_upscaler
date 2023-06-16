@@ -1,6 +1,6 @@
 runai submit \
   --name create-ids \
-  --image aicregistry:5000/wds20:ldm_brain \
+  --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
   --gpu 0 \
   --cpu 2 \

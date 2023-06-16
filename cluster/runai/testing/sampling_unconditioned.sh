@@ -16,7 +16,7 @@ num_inference_steps=200
 
 runai submit \
   --name  brain-sampling-0 \
-  --image aicregistry:5000/wds20:ldm_brain \
+  --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
   --gpu 1 \
   --cpu 4 \
