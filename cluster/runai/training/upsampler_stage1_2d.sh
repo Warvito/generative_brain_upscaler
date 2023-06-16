@@ -1,17 +1,17 @@
 seed=42
-run_dir="upsampler_aekl_v0"
-training_ids="/project/outputs/ids/train.tsv"
-validation_ids="/project/outputs/ids/validation.tsv"
-config_file="/project/configs/upsampler_stage1/aekl_v0.yaml"
+run_dir="upsampler_aekl_v0_2d"
+training_ids="/project/outputs/ids/train_2d.tsv"
+validation_ids="/project/outputs/ids/validation_2d.tsv"
+config_file="/project/configs/upsampler_stage1_2d/aekl_v0.yaml"
 batch_size=32
 n_epochs=30
 adv_start=10
 eval_freq=5
 num_workers=64
-experiment="UPSAMPLER-AEKL"
+experiment="UPSAMPLER-AEKL-2D"
 
 runai submit \
-  --name upscaler-aekl-v0 \
+  --name upscaler-aekl-v0-2d \
   --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
   --gpu 8 \
@@ -21,9 +21,9 @@ runai submit \
   --host-ipc \
   --project wds20 \
   --volume /nfs/home/wds20/projects/generative_brain_upscaler/:/project/ \
-  --volume /nfs/project/AMIGO/Biobank/derivatives/super-res/:/data/ \
+  --volume /nfs/home/wds20/datasets/Biobank/derivatives/2d_controlnet/:/data/ \
   --command -- bash /project/src/bash/start_script.sh \
-    python3 /project/src/python/training/train_upsampler_aekl.py \
+    python3 /project/src/python/training/train_aekl_2d.py \
       seed=${seed} \
       run_dir=${run_dir} \
       training_ids=${training_ids} \
