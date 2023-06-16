@@ -10,7 +10,7 @@ from pynvml.smi import nvidia_smi
 from tensorboardX import SummaryWriter
 from torch.cuda.amp import GradScaler, autocast
 from tqdm import tqdm
-from util import log_ldm_sample_unconditioned, log_reconstructions
+from util_2d import log_ldm_sample_unconditioned, log_reconstructions
 
 
 def get_lr(optimizer):

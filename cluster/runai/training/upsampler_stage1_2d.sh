@@ -14,7 +14,7 @@ runai submit \
   --name upscaler-aekl-v0-2d \
   --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
-  --gpu 8 \
+  --gpu 2 \
   --cpu 64 \
   --large-shm \
   --run-as-user \
