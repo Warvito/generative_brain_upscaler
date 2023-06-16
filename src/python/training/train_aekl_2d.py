@@ -12,7 +12,7 @@ from monai.config import print_config
 from monai.utils import set_determinism
 from omegaconf import OmegaConf
 from tensorboardX import SummaryWriter
-from training_functions import train_aekl
+from training_functions_2d import train_aekl
 from util_2d import get_dataloader, log_mlflow
 
 warnings.filterwarnings("ignore")
