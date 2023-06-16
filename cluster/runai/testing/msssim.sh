@@ -13,7 +13,7 @@ runai submit \
   --node-type "A100" \
   --host-ipc \
   --project wds20 \
-  --volume /nfs/home/wds20/projects/generative_brain/:/project/ \
+  --volume /nfs/home/wds20/projects/generative_brain_upscaler/:/project/ \
   --command -- bash /project/src/bash/start_script.sh \
     python3 /project/src/python/testing/compute_msssim_sample.py \
       seed=${seed} \

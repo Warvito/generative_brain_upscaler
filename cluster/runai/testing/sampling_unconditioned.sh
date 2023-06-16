@@ -24,7 +24,7 @@ runai submit \
   --run-as-user \
   --host-ipc \
   --project wds20 \
-  --volume /nfs/home/wds20/projects/generative_brain/:/project/ \
+  --volume /nfs/home/wds20/projects/generative_brain_upscaler/:/project/ \
   --command -- bash /project/src/bash/start_script.sh \
     python3 /project/src/python/testing/sample_images.py \
       output_dir=${output_dir} \

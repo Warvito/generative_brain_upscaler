@@ -21,7 +21,7 @@ runai submit \
   --node-type "A100" \
   --host-ipc \
   --project wds20 \
-  --volume /nfs/home/wds20/projects/generative_brain/:/project/ \
+  --volume /nfs/home/wds20/projects/generative_brain_upscaler/:/project/ \
   --volume /nfs/project/AMIGO/Biobank/derivatives/super-res/:/data/ \
   --command -- bash /project/src/bash/start_script.sh \
     python3 /project/src/python/training/train_upsampler_aekl.py \
