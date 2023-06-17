@@ -8,15 +8,16 @@ scale_factor=0.3
 batch_size=32
 n_epochs=25
 eval_freq=1
-num_workers=64
+num_workers=128
 experiment="LDM-2D"
 
 runai submit \
   --name upscaler-ldm-v0-2d \
   --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
-  --gpu 8 \
-  --cpu 64 \
+  --gpu 4 \
+  --cpu 96 \
+  --node-type "A100" \
   --large-shm \
   --run-as-user \
   --host-ipc \
