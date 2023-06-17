@@ -26,29 +26,19 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
     parser.add_argument("--run_dir", help="Location of model to resume.")
     parser.add_argument("--training_ids", help="Location of file with training ids.")
-    parser.add_argument(
-        "--validation_ids", help="Location of file with validation ids."
-    )
+    parser.add_argument("--validation_ids", help="Location of file with validation ids.")
     parser.add_argument("--config_file", help="Location of file with validation ids.")
     parser.add_argument("--stage1_uri", help="Path readable by load_model.")
-    parser.add_argument(
-        "--scale_factor", type=float, help="Path readable by load_model."
-    )
-    parser.add_argument(
-        "--batch_size", type=int, default=256, help="Training batch size."
-    )
-    parser.add_argument(
-        "--n_epochs", type=int, default=25, help="Number of epochs to train."
-    )
+    parser.add_argument("--scale_factor", type=float, help="Path readable by load_model.")
+    parser.add_argument("--batch_size", type=int, default=256, help="Training batch size.")
+    parser.add_argument("--n_epochs", type=int, default=25, help="Number of epochs to train.")
     parser.add_argument(
         "--eval_freq",
         type=int,
         default=10,
         help="Number of epochs to between evaluations.",
     )
-    parser.add_argument(
-        "--num_workers", type=int, default=8, help="Number of loader workers"
-    )
+    parser.add_argument("--num_workers", type=int, default=8, help="Number of loader workers")
     parser.add_argument("--experiment", help="Mlflow experiment name.")
 
     args = parser.parse_args()
@@ -115,9 +105,7 @@ def main(args):
     scheduler = DDPMScheduler(**config["ldm"].get("scheduler", dict()))
     low_res_scheduler = DDPMScheduler(**config["ldm"].get("scheduler", dict()))
 
-    text_encoder = CLIPTextModel.from_pretrained(
-        "stabilityai/stable-diffusion-2-1-base", subfolder="text_encoder"
-    )
+    text_encoder = CLIPTextModel.from_pretrained("stabilityai/stable-diffusion-2-1-base", subfolder="text_encoder")
 
     print(f"Let's use {torch.cuda.device_count()} GPUs!")
     device = torch.device("cuda")

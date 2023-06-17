@@ -25,9 +25,7 @@ def print_gpu_memory_report():
         print("Memory report")
         for i, data_by_rank in enumerate(data):
             mem_report = data_by_rank["fb_memory_usage"]
-            print(
-                f"gpu:{i} mem(%) {int(mem_report['used'] * 100.0 / mem_report['total'])}"
-            )
+            print(f"gpu:{i} mem(%) {int(mem_report['used'] * 100.0 / mem_report['total'])}")
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -147,9 +145,7 @@ def train_epoch_aekl(
     model.train()
     discriminator.train()
 
-    adv_loss = PatchAdversarialLoss(
-        criterion="least_squares", no_activation_leastsq=True
-    )
+    adv_loss = PatchAdversarialLoss(criterion="least_squares", no_activation_leastsq=True)
 
     pbar = tqdm(enumerate(loader), total=len(loader))
     for step, x in pbar:
@@ -170,18 +166,11 @@ def train_epoch_aekl(
 
             if adv_weight > 0:
                 logits_fake = discriminator(reconstruction.contiguous().float())[-1]
-                generator_loss = adv_loss(
-                    logits_fake, target_is_real=True, for_discriminator=False
-                )
+                generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
             else:
                 generator_loss = torch.tensor([0.0]).to(device)
 
-            loss = (
-                l1_loss
-                + kl_weight * kl_loss
-                + perceptual_weight * p_loss
-                + adv_weight * generator_loss
-            )
+            loss = l1_loss + kl_weight * kl_loss + perceptual_weight * p_loss + adv_weight * generator_loss
 
             loss = loss.mean()
             l1_loss = l1_loss.mean()
@@ -209,13 +198,9 @@ def train_epoch_aekl(
 
             with autocast(enabled=True):
                 logits_fake = discriminator(reconstruction.contiguous().detach())[-1]
-                loss_d_fake = adv_loss(
-                    logits_fake, target_is_real=False, for_discriminator=True
-                )
+                loss_d_fake = adv_loss(logits_fake, target_is_real=False, for_discriminator=True)
                 logits_real = discriminator(images.contiguous().detach())[-1]
-                loss_d_real = adv_loss(
-                    logits_real, target_is_real=True, for_discriminator=True
-                )
+                loss_d_real = adv_loss(logits_real, target_is_real=True, for_discriminator=True)
                 discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
 
                 d_loss = adv_weight * discriminator_loss
@@ -266,9 +251,7 @@ def eval_aekl(
     model.eval()
     discriminator.eval()
 
-    adv_loss = PatchAdversarialLoss(
-        criterion="least_squares", no_activation_leastsq=True
-    )
+    adv_loss = PatchAdversarialLoss(criterion="least_squares", no_activation_leastsq=True)
     total_losses = OrderedDict()
     for x in loader:
         images = x["t1w"].to(device)
@@ -286,32 +269,21 @@ def eval_aekl(
 
             if adv_weight > 0:
                 logits_fake = discriminator(reconstruction.contiguous().float())[-1]
-                generator_loss = adv_loss(
-                    logits_fake, target_is_real=True, for_discriminator=False
-                )
+                generator_loss = adv_loss(logits_fake, target_is_real=True, for_discriminator=False)
             else:
                 generator_loss = torch.tensor([0.0]).to(device)
 
             # DISCRIMINATOR
             if adv_weight > 0:
                 logits_fake = discriminator(reconstruction.contiguous().detach())[-1]
-                loss_d_fake = adv_loss(
-                    logits_fake, target_is_real=False, for_discriminator=True
-                )
+                loss_d_fake = adv_loss(logits_fake, target_is_real=False, for_discriminator=True)
                 logits_real = discriminator(images.contiguous().detach())[-1]
-                loss_d_real = adv_loss(
-                    logits_real, target_is_real=True, for_discriminator=True
-                )
+                loss_d_real = adv_loss(logits_real, target_is_real=True, for_discriminator=True)
                 discriminator_loss = (loss_d_fake + loss_d_real) * 0.5
             else:
                 discriminator_loss = torch.tensor([0.0]).to(device)
 
-            loss = (
-                l1_loss
-                + kl_weight * kl_loss
-                + perceptual_weight * p_loss
-                + adv_weight * generator_loss
-            )
+            loss = l1_loss + kl_weight * kl_loss + perceptual_weight * p_loss + adv_weight * generator_loss
 
             loss = loss.mean()
             l1_loss = l1_loss.mean()
@@ -465,12 +437,8 @@ def train_epoch_upsampler_ldm(
         low_res_image = x["low_res_t1w"].to(device)
         reports = x["report"].to(device)
 
-        timesteps = torch.randint(
-            0, scheduler.num_train_timesteps, (images.shape[0],), device=device
-        ).long()
-        low_res_timesteps = torch.randint(
-            0, 350, (low_res_image.shape[0],), device=device
-        ).long()
+        timesteps = torch.randint(0, scheduler.num_train_timesteps, (images.shape[0],), device=device).long()
+        low_res_timesteps = torch.randint(0, 350, (low_res_image.shape[0],), device=device).long()
 
         optimizer.zero_grad(set_to_none=True)
         with autocast(enabled=True):
@@ -482,15 +450,15 @@ def train_epoch_upsampler_ldm(
 
             noise = torch.randn_like(e).to(device)
             low_res_noise = torch.randn_like(low_res_image).to(device)
-            noisy_e = scheduler.add_noise(
-                original_samples=e, noise=noise, timesteps=timesteps
-            )
+            noisy_e = scheduler.add_noise(original_samples=e, noise=noise, timesteps=timesteps)
             noisy_low_res_image = low_res_scheduler.add_noise(
                 original_samples=low_res_image,
                 noise=low_res_noise,
                 timesteps=low_res_timesteps,
             )
 
+            print(noisy_low_res_image.shape)
+            print(noisy_e.shape)
             latent_model_input = torch.cat([noisy_e, noisy_low_res_image], dim=1)
 
             noise_pred = model(
@@ -551,12 +519,8 @@ def eval_upsampler_ldm(
         low_res_image = x["low_res_t1w"].to(device)
         reports = x["report"].to(device)
 
-        timesteps = torch.randint(
-            0, scheduler.num_train_timesteps, (images.shape[0],), device=device
-        ).long()
-        low_res_timesteps = torch.randint(
-            0, 350, (low_res_image.shape[0],), device=device
-        ).long()
+        timesteps = torch.randint(0, scheduler.num_train_timesteps, (images.shape[0],), device=device).long()
+        low_res_timesteps = torch.randint(0, 350, (low_res_image.shape[0],), device=device).long()
 
         with autocast(enabled=True):
             e = stage1(images) * scale_factor
@@ -566,9 +530,7 @@ def eval_upsampler_ldm(
 
             noise = torch.randn_like(e).to(device)
             low_res_noise = torch.randn_like(low_res_image).to(device)
-            noisy_e = scheduler.add_noise(
-                original_samples=e, noise=noise, timesteps=timesteps
-            )
+            noisy_e = scheduler.add_noise(original_samples=e, noise=noise, timesteps=timesteps)
             noisy_low_res_image = low_res_scheduler.add_noise(
                 original_samples=low_res_image,
                 noise=low_res_noise,

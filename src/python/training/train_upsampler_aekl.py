@@ -24,16 +24,10 @@ def parse_args():
     parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
     parser.add_argument("--run_dir", help="Location of model to resume.")
     parser.add_argument("--training_ids", help="Location of file with training ids.")
-    parser.add_argument(
-        "--validation_ids", help="Location of file with validation ids."
-    )
+    parser.add_argument("--validation_ids", help="Location of file with validation ids.")
     parser.add_argument("--config_file", help="Location of file with validation ids.")
-    parser.add_argument(
-        "--batch_size", type=int, default=256, help="Training batch size."
-    )
-    parser.add_argument(
-        "--n_epochs", type=int, default=25, help="Number of epochs to train."
-    )
+    parser.add_argument("--batch_size", type=int, default=256, help="Training batch size.")
+    parser.add_argument("--n_epochs", type=int, default=25, help="Number of epochs to train.")
     parser.add_argument(
         "--adv_start",
         type=int,
@@ -46,9 +40,7 @@ def parse_args():
         default=10,
         help="Number of epochs to between evaluations.",
     )
-    parser.add_argument(
-        "--num_workers", type=int, default=8, help="Number of loader workers"
-    )
+    parser.add_argument("--num_workers", type=int, default=8, help="Number of loader workers")
     parser.add_argument("--experiment", help="Mlflow experiment name.")
 
     args = parser.parse_args()

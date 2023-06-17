@@ -54,13 +54,9 @@ def get_dataloader(
         [
             transforms.LoadImaged(keys=["t1w"]),
             transforms.EnsureChannelFirstd(keys=["t1w"]),
-            transforms.Rotate90d(
-                keys=["t1w"], k=-1, spatial_axes=(0, 1)
-            ),  # Fix flipped image read
+            transforms.Rotate90d(keys=["t1w"], k=-1, spatial_axes=(0, 1)),  # Fix flipped image read
             transforms.Flipd(keys=["t1w"], spatial_axis=1),  # Fix flipped image read
-            transforms.ScaleIntensityRanged(
-                keys=["t1w"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True
-            ),
+            transforms.ScaleIntensityRanged(keys=["t1w"], a_min=0.0, a_max=255.0, b_min=0.0, b_max=1.0, clip=True),
             transforms.CenterSpatialCropd(keys=["t1w"], roi_size=[64, 96]),
             transforms.CopyItemsd(keys=["t1w"], times=1, names=["low_res_t1w"]),
             transforms.Resized(
@@ -76,12 +72,8 @@ def get_dataloader(
             [
                 transforms.LoadImaged(keys=["t1w"]),
                 transforms.EnsureChannelFirstd(keys=["t1w"]),
-                transforms.Rotate90d(
-                    keys=["t1w"], k=-1, spatial_axes=(0, 1)
-                ),  # Fix flipped image read
-                transforms.Flipd(
-                    keys=["t1w"], spatial_axis=1
-                ),  # Fix flipped image read
+                transforms.Rotate90d(keys=["t1w"], k=-1, spatial_axes=(0, 1)),  # Fix flipped image read
+                transforms.Flipd(keys=["t1w"], spatial_axis=1),  # Fix flipped image read
                 transforms.ScaleIntensityRanged(
                     keys=["t1w"],
                     a_min=0.0,
@@ -100,15 +92,9 @@ def get_dataloader(
                     prob=0.5,
                 ),
                 transforms.RandShiftIntensityd(keys=["t1w"], offsets=0.05, prob=0.1),
-                transforms.RandAdjustContrastd(
-                    keys=["t1w"], gamma=(0.97, 1.03), prob=0.1
-                ),
-                transforms.ThresholdIntensityd(
-                    keys=["t1w"], threshold=1, above=False, cval=1.0
-                ),
-                transforms.ThresholdIntensityd(
-                    keys=["t1w"], threshold=0, above=True, cval=0
-                ),
+                transforms.RandAdjustContrastd(keys=["t1w"], gamma=(0.97, 1.03), prob=0.1),
+                transforms.ThresholdIntensityd(keys=["t1w"], threshold=1, above=False, cval=1.0),
+                transforms.ThresholdIntensityd(keys=["t1w"], threshold=0, above=True, cval=0),
             ]
         )
     if model_type == "diffusion":
@@ -116,12 +102,8 @@ def get_dataloader(
             [
                 transforms.LoadImaged(keys=["t1w"]),
                 transforms.EnsureChannelFirstd(keys=["t1w"]),
-                transforms.Rotate90d(
-                    keys=["t1w"], k=-1, spatial_axes=(0, 1)
-                ),  # Fix flipped image read
-                transforms.Flipd(
-                    keys=["t1w"], spatial_axis=1
-                ),  # Fix flipped image read
+                transforms.Rotate90d(keys=["t1w"], k=-1, spatial_axes=(0, 1)),  # Fix flipped image read
+                transforms.Flipd(keys=["t1w"], spatial_axis=1),  # Fix flipped image read
                 transforms.ScaleIntensityRanged(
                     keys=["t1w"],
                     a_min=0.0,
@@ -140,15 +122,9 @@ def get_dataloader(
                     prob=0.25,
                 ),
                 transforms.RandShiftIntensityd(keys=["t1w"], offsets=0.05, prob=0.1),
-                transforms.RandAdjustContrastd(
-                    keys=["t1w"], gamma=(0.97, 1.03), prob=0.1
-                ),
-                transforms.ThresholdIntensityd(
-                    keys=["t1w"], threshold=1, above=False, cval=1.0
-                ),
-                transforms.ThresholdIntensityd(
-                    keys=["t1w"], threshold=0, above=True, cval=0
-                ),
+                transforms.RandAdjustContrastd(keys=["t1w"], gamma=(0.97, 1.03), prob=0.1),
+                transforms.ThresholdIntensityd(keys=["t1w"], threshold=1, above=False, cval=1.0),
+                transforms.ThresholdIntensityd(keys=["t1w"], threshold=0, above=True, cval=0),
                 transforms.CopyItemsd(keys=["t1w"], times=1, names=["low_res_t1w"]),
                 transforms.Resized(
                     keys=["low_res_t1w"],
@@ -171,9 +147,7 @@ def get_dataloader(
         )
 
     train_dicts = get_datalist(ids_path=training_ids)
-    train_ds = PersistentDataset(
-        data=train_dicts, transform=train_transforms, cache_dir=str(cache_dir)
-    )
+    train_ds = PersistentDataset(data=train_dicts, transform=train_transforms, cache_dir=str(cache_dir))
     train_loader = DataLoader(
         train_ds,
         batch_size=batch_size,
@@ -185,9 +159,7 @@ def get_dataloader(
     )
 
     val_dicts = get_datalist(ids_path=validation_ids)
-    val_ds = PersistentDataset(
-        data=val_dicts, transform=val_transforms, cache_dir=str(cache_dir)
-    )
+    val_ds = PersistentDataset(data=val_dicts, transform=val_transforms, cache_dir=str(cache_dir))
     val_loader = DataLoader(
         val_ds,
         batch_size=batch_size,
@@ -206,9 +178,7 @@ def get_dataloader(
 def recursive_items(dictionary, prefix=""):
     for key, value in dictionary.items():
         if type(value) in [dict, DictConfig]:
-            yield from recursive_items(
-                value, prefix=str(key) if prefix == "" else f"{prefix}.{str(key)}"
-            )
+            yield from recursive_items(value, prefix=str(key) if prefix == "" else f"{prefix}.{str(key)}")
         else:
             yield (str(key) if prefix == "" else f"{prefix}.{str(key)}", value)
 
@@ -295,16 +265,12 @@ def log_ldm_sample_unconditioned(
     latent = torch.randn((1,) + spatial_shape)
     latent = latent.to(device)
 
-    prompt_embeds = torch.cat(
-        (49406 * torch.ones(1, 1), 49407 * torch.ones(1, 76)), 1
-    ).long()
+    prompt_embeds = torch.cat((49406 * torch.ones(1, 1), 49407 * torch.ones(1, 76)), 1).long()
     prompt_embeds = text_encoder(prompt_embeds.squeeze(1))
     prompt_embeds = prompt_embeds[0]
 
     for t in tqdm(scheduler.timesteps, ncols=70):
-        noise_pred = model(
-            x=latent, timesteps=torch.asarray((t,)).to(device), context=prompt_embeds
-        )
+        noise_pred = model(x=latent, timesteps=torch.asarray((t,)).to(device), context=prompt_embeds)
         latent, _ = scheduler.step(noise_pred, t, latent)
 
     x_hat = stage1.model.decode(latent / scale_factor)
@@ -331,9 +297,7 @@ def log_ldm_upsampler(
     latent = torch.randn((1,) + spatial_shape)
     latent = latent.to(device)
 
-    prompt_embeds = torch.cat(
-        (49406 * torch.ones(1, 1), 49407 * torch.ones(1, 76)), 1
-    ).long()
+    prompt_embeds = torch.cat((49406 * torch.ones(1, 1), 49407 * torch.ones(1, 76)), 1).long()
     prompt_embeds = text_encoder(prompt_embeds.squeeze(1).to(device))
     prompt_embeds = prompt_embeds[0]
 

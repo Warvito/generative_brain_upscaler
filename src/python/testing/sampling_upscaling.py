@@ -1,15 +1,15 @@
 """ Script to generate downsampled images from the LDM and upscale it. """
 
 
+import matplotlib.pyplot as plt
 import mlflow.pytorch
+import numpy as np
 import torch
 from generative.networks.schedulers import DDIMScheduler
-from transformers import CLIPTextModel, CLIPTokenizer
-from omegaconf import OmegaConf
 from monai.utils import set_determinism
+from omegaconf import OmegaConf
 from tqdm import tqdm
-import numpy as np
-import matplotlib.pyplot as plt
+from transformers import CLIPTextModel, CLIPTokenizer
 
 device = torch.device("cuda")
 
@@ -54,14 +54,12 @@ prompt_embeds = prompt_embeds[0].to(device)
 
 set_determinism(seed=42)
 
-x_size=10
-y_size=14
-z_size=10
-scale_factor=0.3
+x_size = 10
+y_size = 14
+z_size = 10
+scale_factor = 0.3
 
-noise = torch.randn((1, config["ldm"]["params"]["in_channels"], x_size, y_size, z_size)).to(
-    device
-)
+noise = torch.randn((1, config["ldm"]["params"]["in_channels"], x_size, y_size, z_size)).to(device)
 
 with torch.no_grad():
     progress_bar = tqdm(scheduler.timesteps)
@@ -125,12 +123,12 @@ prompt_embeds = text_encoder(text_input_ids.squeeze(1))
 prompt_embeds = prompt_embeds[0].to(device)
 
 set_determinism(seed=42)
-x_size=80
-y_size=112
-z_size=80
-scale_factor=0.3
+x_size = 80
+y_size = 112
+z_size = 80
+scale_factor = 0.3
 
-sampling_image = torch.Tensor(sample[:,:,0:40, 0:56, 0:40]).to(device)
+sampling_image = torch.Tensor(sample[:, :, 0:40, 0:56, 0:40]).to(device)
 
 latents = torch.randn((1, 3, 40, 56, 40)).to(device)
 low_res_noise = torch.randn((1, 1, 40, 56, 40)).to(device)
@@ -143,7 +141,12 @@ scheduler.set_timesteps(num_inference_steps=1000)
 for t in tqdm(scheduler.timesteps, ncols=110):
     with torch.no_grad():
         latent_model_input = torch.cat([latents, noisy_low_res_image], dim=1)
-        noise_pred = upscaler_ldm_model(x=latent_model_input, timesteps=torch.Tensor((t,)).to(device), context=prompt_embeds, class_labels=noise_level)
+        noise_pred = upscaler_ldm_model(
+            x=latent_model_input,
+            timesteps=torch.Tensor((t,)).to(device),
+            context=prompt_embeds,
+            class_labels=noise_level,
+        )
 
         # 2. compute previous image: x_t -> x_t-1
         latents, _ = scheduler.step(noise_pred, t, latents)
