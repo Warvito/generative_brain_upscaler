@@ -434,6 +434,8 @@ def train_epoch_upsampler_ldm(
     pbar = tqdm(enumerate(loader), total=len(loader))
     for step, x in pbar:
         images = x["t1w"].to(device)
+        print(images.shape)
+
         low_res_image = x["low_res_t1w"].to(device)
         reports = x["report"].to(device)
 

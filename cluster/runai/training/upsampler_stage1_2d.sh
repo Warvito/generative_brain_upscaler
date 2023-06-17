@@ -3,19 +3,20 @@ run_dir="upsampler_aekl_v0_2d"
 training_ids="/project/outputs/ids/train_2d.tsv"
 validation_ids="/project/outputs/ids/validation_2d.tsv"
 config_file="/project/configs/upsampler_stage1_2d/aekl_v0.yaml"
-batch_size=64
+batch_size=128
 n_epochs=30
 adv_start=10
 eval_freq=5
-num_workers=64
+num_workers=128
 experiment="UPSAMPLER-AEKL-2D"
 
 runai submit \
   --name upscaler-aekl-v0-2d \
   --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
-  --gpu 2 \
-  --cpu 64 \
+  --gpu 4 \
+  --cpu 96 \
+  --node-type "A100" \
   --large-shm \
   --run-as-user \
   --host-ipc \
