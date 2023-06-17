@@ -100,6 +100,7 @@ def main(args):
         training_ids=args.training_ids,
         validation_ids=args.validation_ids,
         num_workers=args.num_workers,
+        model_type="diffusion",
     )
 
     # Load Autoencoder to produce the latent representations
