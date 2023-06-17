@@ -2,7 +2,7 @@ seed=42
 run_dir="aekl_v0_ldm_v0_upsampler"
 training_ids="/project/outputs/ids/train.tsv"
 validation_ids="/project/outputs/ids/validation.tsv"
-stage1_uri="/project/mlruns/751866889003045521/a2cb93e5a920445e932ce29e09bd5a82/artifacts/final_model"
+stage1_uri="/project/mlruns/265350922640342393/9c6a6599815e4716a7b46b940f01900a/artifacts/final_model"
 config_file="/project/configs/upsampler_ldm/ldm_v0.yaml"
 scale_factor=0.3
 batch_size=4
@@ -12,14 +12,13 @@ num_workers=8
 experiment="LDM"
 
 runai submit \
-  --name brain-upsampler-ldm-v0 \
+  --name upscaler-ldm-v0 \
   --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
   --gpu 1 \
   --cpu 4 \
   --large-shm \
   --run-as-user \
-  --node-type "A100" \
   --host-ipc \
   --project wds20 \
   --volume /nfs/home/wds20/projects/generative_brain_upscaler/:/project/ \
