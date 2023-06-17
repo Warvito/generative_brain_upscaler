@@ -130,6 +130,7 @@ def get_dataloader(
                     b_max=1.0,
                     clip=True,
                 ),
+                transforms.CenterSpatialCropd(keys=["t1w"], roi_size=[64, 96]),
                 transforms.RandFlipd(keys=["t1w"], prob=0.5, spatial_axis=0),
                 transforms.RandAffined(
                     keys=["t1w"],
@@ -148,6 +149,11 @@ def get_dataloader(
                 transforms.ThresholdIntensityd(
                     keys=["t1w"], threshold=0, above=True, cval=0
                 ),
+                transforms.CopyItemsd(keys=["t1w"], times=1, names=["low_res_t1w"]),
+                transforms.Resized(
+                    keys=["low_res_t1w"],
+                    spatial_size=[32, 48],
+                ),
                 ApplyTokenizerd(keys=["report"]),
                 transforms.RandLambdad(
                     keys=["report"],
@@ -160,6 +166,7 @@ def get_dataloader(
                         1,
                     ).long(),
                 ),  # 49406: BOS token 49407: PAD token
+                transforms.ToTensord(keys=["t1w", "low_res_t1w", "report"]),
             ]
         )
 
