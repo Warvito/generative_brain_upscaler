@@ -2,13 +2,13 @@ seed=42
 run_dir="aekl_v0_ldm_v0_upsampler_2d"
 training_ids="/project/outputs/ids/train_2d.tsv"
 validation_ids="/project/outputs/ids/validation_2d.tsv"
-stage1_uri="/project/mlruns/648461630920358299/46b9dad1fb3344ffb323fa82cb661f16/artifacts/final_model"
+stage1_uri="/project/mlruns/648461630920358299/3ddd8b39ecef4c2cbfa699b3f8e0337a/artifacts/final_model"
 config_file="/project/configs/upsampler_ldm_2d/ldm_v0.yaml"
 scale_factor=0.3
-batch_size=32
-n_epochs=25
-eval_freq=1
-num_workers=128
+batch_size=1024
+n_epochs=50
+eval_freq=10
+num_workers=256
 experiment="LDM-2D"
 
 runai submit \
@@ -16,7 +16,7 @@ runai submit \
   --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
   --gpu 4 \
-  --cpu 96 \
+  --cpu 128 \
   --node-type "A100" \
   --large-shm \
   --run-as-user \
