@@ -1,18 +1,18 @@
 seed=42
-run_dir="aekl_v0_ldm_v0_upsampler"
-training_ids="/project/outputs/ids/train.tsv"
-validation_ids="/project/outputs/ids/validation.tsv"
-stage1_uri="/project/mlruns/265350922640342393/9c6a6599815e4716a7b46b940f01900a/artifacts/final_model"
-config_file="/project/configs/upsampler_ldm/ldm_v0.yaml"
+run_dir="aekl_v0_ldm_v0_upsampler_2d"
+training_ids="/project/outputs/ids/train_2d.tsv"
+validation_ids="/project/outputs/ids/validation_2d.tsv"
+stage1_uri="/project/mlruns/648461630920358299/46b9dad1fb3344ffb323fa82cb661f16/artifacts/final_model"
+config_file="/project/configs/upsampler_ldm_2d/ldm_v0.yaml"
 scale_factor=0.3
 batch_size=32
 n_epochs=25
 eval_freq=1
 num_workers=64
-experiment="LDM"
+experiment="LDM-2D"
 
 runai submit \
-  --name upscaler-ldm-v0 \
+  --name upscaler-ldm-v0-2d \
   --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
   --gpu 8 \
@@ -22,9 +22,9 @@ runai submit \
   --host-ipc \
   --project wds20 \
   --volume /nfs/home/wds20/projects/generative_brain_upscaler/:/project/ \
-  --volume /nfs/project/AMIGO/Biobank/derivatives/super-res/:/data/ \
+  --volume /nfs/home/wds20/datasets/Biobank/derivatives/2d_controlnet/:/data/ \
   --command -- bash /project/src/bash/start_script.sh \
-      python3 /project/src/python/training/train_upsampler_ldm.py \
+      python3 /project/src/python/training/train_upsampler_ldm_2d.py \
       seed=${seed} \
       run_dir=${run_dir} \
       training_ids=${training_ids} \

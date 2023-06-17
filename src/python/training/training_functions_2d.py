@@ -10,7 +10,7 @@ from pynvml.smi import nvidia_smi
 from tensorboardX import SummaryWriter
 from torch.cuda.amp import GradScaler, autocast
 from tqdm import tqdm
-from util_2d import log_ldm_sample_unconditioned, log_reconstructions
+from util_2d import log_ldm_upsampler, log_reconstructions
 
 
 def get_lr(optimizer):
@@ -349,12 +349,13 @@ def eval_aekl(
 
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Latent Diffusion Model
+# Latent Diffusion Model Upsampler
 # ----------------------------------------------------------------------------------------------------------------------
-def train_ldm(
+def train_upsampler_ldm(
     model: nn.Module,
     stage1: nn.Module,
     scheduler: nn.Module,
+    low_res_scheduler: nn.Module,
     text_encoder,
     start_epoch: int,
     best_loss: float,
@@ -372,10 +373,11 @@ def train_ldm(
     scaler = GradScaler()
     raw_model = model.module if hasattr(model, "module") else model
 
-    val_loss = eval_ldm(
+    val_loss = eval_upsampler_ldm(
         model=model,
         stage1=stage1,
         scheduler=scheduler,
+        low_res_scheduler=low_res_scheduler,
         text_encoder=text_encoder,
         loader=val_loader,
         device=device,
@@ -387,10 +389,11 @@ def train_ldm(
     print(f"epoch {start_epoch} val loss: {val_loss:.4f}")
 
     for epoch in range(start_epoch, n_epochs):
-        train_epoch_ldm(
+        train_epoch_upsampler_ldm(
             model=model,
             stage1=stage1,
             scheduler=scheduler,
+            low_res_scheduler=low_res_scheduler,
             text_encoder=text_encoder,
             loader=train_loader,
             optimizer=optimizer,
@@ -402,10 +405,11 @@ def train_ldm(
         )
 
         if (epoch + 1) % eval_freq == 0:
-            val_loss = eval_ldm(
+            val_loss = eval_upsampler_ldm(
                 model=model,
                 stage1=stage1,
                 scheduler=scheduler,
+                low_res_scheduler=low_res_scheduler,
                 text_encoder=text_encoder,
                 loader=val_loader,
                 device=device,
@@ -439,10 +443,11 @@ def train_ldm(
     return val_loss
 
 
-def train_epoch_ldm(
+def train_epoch_upsampler_ldm(
     model: nn.Module,
     stage1: nn.Module,
     scheduler: nn.Module,
+    low_res_scheduler: nn.Module,
     text_encoder,
     loader: torch.utils.data.DataLoader,
     optimizer: torch.optim.Optimizer,
@@ -457,9 +462,14 @@ def train_epoch_ldm(
     pbar = tqdm(enumerate(loader), total=len(loader))
     for step, x in pbar:
         images = x["t1w"].to(device)
+        low_res_image = x["low_res_image"].to(device)
         reports = x["report"].to(device)
+
         timesteps = torch.randint(
             0, scheduler.num_train_timesteps, (images.shape[0],), device=device
+        ).long()
+        low_res_timesteps = torch.randint(
+            0, 350, (low_res_image.shape[0],), device=device
         ).long()
 
         optimizer.zero_grad(set_to_none=True)
@@ -471,10 +481,24 @@ def train_epoch_ldm(
             prompt_embeds = prompt_embeds[0]
 
             noise = torch.randn_like(e).to(device)
+            low_res_noise = torch.randn_like(low_res_image).to(device)
             noisy_e = scheduler.add_noise(
                 original_samples=e, noise=noise, timesteps=timesteps
             )
-            noise_pred = model(x=noisy_e, timesteps=timesteps, context=prompt_embeds)
+            noisy_low_res_image = low_res_scheduler.add_noise(
+                original_samples=low_res_image,
+                noise=low_res_noise,
+                timesteps=low_res_timesteps,
+            )
+
+            latent_model_input = torch.cat([noisy_e, noisy_low_res_image], dim=1)
+
+            noise_pred = model(
+                x=latent_model_input,
+                timesteps=timesteps,
+                context=prompt_embeds,
+                class_labels=low_res_timesteps,
+            )
 
             if scheduler.prediction_type == "v_prediction":
                 # Use v-prediction parameterization
@@ -504,10 +528,11 @@ def train_epoch_ldm(
 
 
 @torch.no_grad()
-def eval_ldm(
+def eval_upsampler_ldm(
     model: nn.Module,
     stage1: nn.Module,
     scheduler: nn.Module,
+    low_res_scheduler: nn.Module,
     text_encoder,
     loader: torch.utils.data.DataLoader,
     device: torch.device,
@@ -523,9 +548,14 @@ def eval_ldm(
 
     for x in loader:
         images = x["t1w"].to(device)
+        low_res_image = x["low_res_image"].to(device)
         reports = x["report"].to(device)
+
         timesteps = torch.randint(
             0, scheduler.num_train_timesteps, (images.shape[0],), device=device
+        ).long()
+        low_res_timesteps = torch.randint(
+            0, 350, (low_res_image.shape[0],), device=device
         ).long()
 
         with autocast(enabled=True):
@@ -535,10 +565,24 @@ def eval_ldm(
             prompt_embeds = prompt_embeds[0]
 
             noise = torch.randn_like(e).to(device)
+            low_res_noise = torch.randn_like(low_res_image).to(device)
             noisy_e = scheduler.add_noise(
                 original_samples=e, noise=noise, timesteps=timesteps
             )
-            noise_pred = model(x=noisy_e, timesteps=timesteps, context=prompt_embeds)
+            noisy_low_res_image = low_res_scheduler.add_noise(
+                original_samples=low_res_image,
+                noise=low_res_noise,
+                timesteps=low_res_timesteps,
+            )
+
+            latent_model_input = torch.cat([noisy_e, noisy_low_res_image], dim=1)
+
+            noise_pred = model(
+                x=latent_model_input,
+                timesteps=timesteps,
+                context=prompt_embeds,
+                class_labels=low_res_timesteps,
+            )
 
             if scheduler.prediction_type == "v_prediction":
                 # Use v-prediction parameterization
@@ -560,263 +604,17 @@ def eval_ldm(
         writer.add_scalar(f"{k}", v, step)
 
     if sample:
-        log_ldm_sample_unconditioned(
+        log_ldm_upsampler(
             model=raw_model,
             stage1=raw_stage1,
             scheduler=scheduler,
             text_encoder=text_encoder,
             spatial_shape=tuple(e.shape[1:]),
+            low_res_image=low_res_image,
             writer=writer,
             step=step,
             device=device,
             scale_factor=scale_factor,
         )
-
-    return total_losses["loss"]
-
-
-# ----------------------------------------------------------------------------------------------------------------------
-# Controlnet
-# ----------------------------------------------------------------------------------------------------------------------
-def train_controlnet(
-    controlnet: nn.Module,
-    diffusion: nn.Module,
-    stage1: nn.Module,
-    scheduler: nn.Module,
-    text_encoder,
-    start_epoch: int,
-    best_loss: float,
-    train_loader: torch.utils.data.DataLoader,
-    val_loader: torch.utils.data.DataLoader,
-    optimizer: torch.optim.Optimizer,
-    n_epochs: int,
-    eval_freq: int,
-    writer_train: SummaryWriter,
-    writer_val: SummaryWriter,
-    device: torch.device,
-    run_dir: Path,
-    scale_factor: float = 1.0,
-) -> float:
-    scaler = GradScaler()
-    raw_controlnet = controlnet.module if hasattr(controlnet, "module") else controlnet
-
-    val_loss = eval_controlnet(
-        controlnet=controlnet,
-        diffusion=diffusion,
-        stage1=stage1,
-        scheduler=scheduler,
-        text_encoder=text_encoder,
-        loader=val_loader,
-        device=device,
-        step=len(train_loader) * start_epoch,
-        writer=writer_val,
-        scale_factor=scale_factor,
-    )
-    print(f"epoch {start_epoch} val loss: {val_loss:.4f}")
-
-    for epoch in range(start_epoch, n_epochs):
-        train_epoch_controlnet(
-            controlnet=controlnet,
-            diffusion=diffusion,
-            stage1=stage1,
-            scheduler=scheduler,
-            text_encoder=text_encoder,
-            loader=train_loader,
-            optimizer=optimizer,
-            device=device,
-            epoch=epoch,
-            writer=writer_train,
-            scaler=scaler,
-            scale_factor=scale_factor,
-        )
-
-        if (epoch + 1) % eval_freq == 0:
-            val_loss = eval_controlnet(
-                controlnet=controlnet,
-                diffusion=diffusion,
-                stage1=stage1,
-                scheduler=scheduler,
-                text_encoder=text_encoder,
-                loader=val_loader,
-                device=device,
-                step=len(train_loader) * epoch,
-                writer=writer_val,
-                scale_factor=scale_factor,
-            )
-
-            print(f"epoch {epoch + 1} val loss: {val_loss:.4f}")
-            print_gpu_memory_report()
-
-            # Save checkpoint
-            checkpoint = {
-                "epoch": epoch + 1,
-                "controlnet": controlnet.state_dict(),
-                "optimizer": optimizer.state_dict(),
-                "best_loss": best_loss,
-            }
-            torch.save(checkpoint, str(run_dir / "checkpoint.pth"))
-
-            if val_loss <= best_loss:
-                print(f"New best val loss {val_loss}")
-                best_loss = val_loss
-                torch.save(raw_controlnet.state_dict(), str(run_dir / "best_model.pth"))
-
-    print(f"Training finished!")
-    print(f"Saving final model...")
-    torch.save(raw_controlnet.state_dict(), str(run_dir / "final_model.pth"))
-
-    return val_loss
-
-
-def train_epoch_controlnet(
-    controlnet: nn.Module,
-    diffusion: nn.Module,
-    stage1: nn.Module,
-    scheduler: nn.Module,
-    text_encoder,
-    loader: torch.utils.data.DataLoader,
-    optimizer: torch.optim.Optimizer,
-    device: torch.device,
-    epoch: int,
-    writer: SummaryWriter,
-    scaler: GradScaler,
-    scale_factor: float = 1.0,
-) -> None:
-    controlnet.train()
-
-    pbar = tqdm(enumerate(loader), total=len(loader))
-    for step, x in pbar:
-        images = x["t1w"].to(device)
-        reports = x["report"].to(device)
-        cond = x["flair"].to(device)
-
-        timesteps = torch.randint(
-            0, scheduler.num_train_timesteps, (images.shape[0],), device=device
-        ).long()
-
-        optimizer.zero_grad(set_to_none=True)
-        with autocast(enabled=True):
-            with torch.no_grad():
-                e = stage1(images) * scale_factor
-
-            prompt_embeds = text_encoder(reports.squeeze(1))
-            prompt_embeds = prompt_embeds[0]
-
-            noise = torch.randn_like(e).to(device)
-            noisy_e = scheduler.add_noise(
-                original_samples=e, noise=noise, timesteps=timesteps
-            )
-
-            down_block_res_samples, mid_block_res_sample = controlnet(
-                x=noisy_e,
-                timesteps=timesteps,
-                context=prompt_embeds,
-                controlnet_cond=cond,
-            )
-
-            noise_pred = diffusion(
-                x=noisy_e,
-                timesteps=timesteps,
-                context=prompt_embeds,
-                down_block_additional_residuals=down_block_res_samples,
-                mid_block_additional_residual=mid_block_res_sample,
-            )
-
-            if scheduler.prediction_type == "v_prediction":
-                # Use v-prediction parameterization
-                target = scheduler.get_velocity(e, noise, timesteps)
-            elif scheduler.prediction_type == "epsilon":
-                target = noise
-            loss = F.mse_loss(noise_pred.float(), target.float())
-
-        losses = OrderedDict(loss=loss)
-
-        scaler.scale(losses["loss"]).backward()
-        scaler.step(optimizer)
-        scaler.update()
-
-        writer.add_scalar("lr", get_lr(optimizer), epoch * len(loader) + step)
-
-        for k, v in losses.items():
-            writer.add_scalar(f"{k}", v.item(), epoch * len(loader) + step)
-
-        pbar.set_postfix(
-            {
-                "epoch": epoch,
-                "loss": f"{losses['loss'].item():.5f}",
-                "lr": f"{get_lr(optimizer):.6f}",
-            }
-        )
-
-
-@torch.no_grad()
-def eval_controlnet(
-    controlnet: nn.Module,
-    diffusion: nn.Module,
-    stage1: nn.Module,
-    scheduler: nn.Module,
-    text_encoder,
-    loader: torch.utils.data.DataLoader,
-    device: torch.device,
-    step: int,
-    writer: SummaryWriter,
-    scale_factor: float = 1.0,
-) -> float:
-    controlnet.eval()
-    total_losses = OrderedDict()
-
-    for x in loader:
-        images = x["t1w"].to(device)
-        reports = x["report"].to(device)
-        cond = x["flair"].to(device)
-
-        timesteps = torch.randint(
-            0, scheduler.num_train_timesteps, (images.shape[0],), device=device
-        ).long()
-
-        with autocast(enabled=True):
-            e = stage1(images) * scale_factor
-
-            prompt_embeds = text_encoder(reports.squeeze(1))
-            prompt_embeds = prompt_embeds[0]
-
-            noise = torch.randn_like(e).to(device)
-            noisy_e = scheduler.add_noise(
-                original_samples=e, noise=noise, timesteps=timesteps
-            )
-
-            down_block_res_samples, mid_block_res_sample = controlnet(
-                x=noisy_e,
-                timesteps=timesteps,
-                context=prompt_embeds,
-                controlnet_cond=cond,
-            )
-
-            noise_pred = diffusion(
-                x=noisy_e,
-                timesteps=timesteps,
-                context=prompt_embeds,
-                down_block_additional_residuals=down_block_res_samples,
-                mid_block_additional_residual=mid_block_res_sample,
-            )
-
-            if scheduler.prediction_type == "v_prediction":
-                # Use v-prediction parameterization
-                target = scheduler.get_velocity(e, noise, timesteps)
-            elif scheduler.prediction_type == "epsilon":
-                target = noise
-            loss = F.mse_loss(noise_pred.float(), target.float())
-
-        loss = loss.mean()
-        losses = OrderedDict(loss=loss)
-
-        for k, v in losses.items():
-            total_losses[k] = total_losses.get(k, 0) + v.item() * images.shape[0]
-
-    for k in total_losses.keys():
-        total_losses[k] /= len(loader.dataset)
-
-    for k, v in total_losses.items():
-        writer.add_scalar(f"{k}", v, step)
 
     return total_losses["loss"]
