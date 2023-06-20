@@ -3,7 +3,7 @@ run_dir="upsampler_aekl_v0"
 training_ids="/project/outputs/ids/train.tsv"
 validation_ids="/project/outputs/ids/validation.tsv"
 config_file="/project/configs/upsampler_stage1/aekl_v0.yaml"
-batch_size=32
+batch_size=16
 n_epochs=30
 adv_start=10
 eval_freq=5
@@ -14,7 +14,7 @@ runai submit \
   --name upscaler-aekl-v0 \
   --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
-  --gpu 8 \
+  --gpu 4 \
   --cpu 64 \
   --large-shm \
   --run-as-user \
