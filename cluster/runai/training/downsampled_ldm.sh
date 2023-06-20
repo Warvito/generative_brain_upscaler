@@ -9,20 +9,20 @@ batch_size=8
 n_epochs=25
 eval_freq=1
 num_workers=8
-experiment="LDM"
+experiment="DOWNSAMPLED-LDM"
 
 runai submit \
-  --name brain-down-ldm-v0 \
-  --image aicregistry:5000/wds20:ldm_brain \
+  --name downsampled-ldm-v0 \
+  --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
-  --gpu 1 \
-  --cpu 4 \
+  --gpu 2 \
+  --cpu 64 \
   --large-shm \
   --run-as-user \
   --node-type "A100" \
   --host-ipc \
   --project wds20 \
-  --volume /nfs/home/wds20/projects/generative_brain/:/project/ \
+  --volume /nfs/home/wds20/projects/generative_brain_upscaler/:/project/ \
   --volume /nfs/project/AMIGO/Biobank/derivatives/super-res/:/data/ \
   --command -- bash /project/src/bash/start_script.sh \
       python3 /project/src/python/training/train_downsampled_ldm.py \

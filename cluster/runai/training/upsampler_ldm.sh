@@ -9,7 +9,7 @@ batch_size=32
 n_epochs=25
 eval_freq=1
 num_workers=64
-experiment="LDM"
+experiment="UPSAMPLER-LDM"
 
 runai submit \
   --name upscaler-ldm-v0 \

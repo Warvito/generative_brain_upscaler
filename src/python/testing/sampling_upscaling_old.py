@@ -1,10 +1,12 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from generative.networks.nets import AutoencoderKL, DiffusionModelUNet
 from generative.networks.schedulers import DDIMScheduler
 from monai import transforms
 from monai.utils import set_determinism
 from omegaconf import OmegaConf
+from PIL import Image
 from tqdm import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
 
@@ -119,8 +121,67 @@ with torch.no_grad():
 # plt.imshow(batch[0]["image"][0, :, :, 20].cpu().numpy())
 # plt.show()
 
-plt.imshow(sampling_image[0, 0, 28, :, :].cpu().numpy())
+plt.imshow(sampling_image[0, 0, :, :, 40].cpu().numpy())
 plt.show()
 
-plt.imshow(decoded[0, 0, 56, :, :].cpu().numpy())
+plt.imshow(decoded[0, 0, :, :, 80].cpu().numpy())
 plt.show()
+
+
+img_row_0 = np.concatenate(
+    (
+        np.flipud(decoded[0, 0, 90, :, :].T),
+        np.flipud(decoded[0, 0, :, 60, :].T),
+    ),
+    axis=1,
+)
+
+img_row_1 = np.concatenate(
+    (
+        decoded[0, 0, :, :, 70],
+        np.zeros((160, 160)),
+    ),
+    axis=1,
+)
+
+img = np.concatenate(
+    (
+        img_row_0,
+        img_row_1,
+    ),
+    axis=0,
+)
+
+# save image using pillow
+
+img = Image.fromarray((img * 255).astype(np.uint8))
+img.save("/media/walter/Storage/Projects/generative_brain_upscaler/outputs/figures/upsampled.png")
+
+
+img_row_0 = np.concatenate(
+    (
+        np.flipud(sampling_image[0, 0, 45, :, :].T),
+        np.flipud(sampling_image[0, 0, :, 30, :].T),
+    ),
+    axis=1,
+)
+
+img_row_1 = np.concatenate(
+    (
+        sampling_image[0, 0, :, :, 35],
+        np.zeros((80, 80)),
+    ),
+    axis=1,
+)
+
+img = np.concatenate(
+    (
+        img_row_0,
+        img_row_1,
+    ),
+    axis=0,
+)
+
+# save image using pillow
+img = Image.fromarray((img * 255).astype(np.uint8))
+img.save("/media/walter/Storage/Projects/generative_brain_upscaler/outputs/figures/downsampled.png")
