@@ -62,7 +62,7 @@ scheduler = DDIMScheduler(
     prediction_type=config["ldm"]["scheduler"]["prediction_type"],
     clip_sample=False,
 )
-scheduler.set_timesteps(1000)
+scheduler.set_timesteps(200)
 
 tokenizer = CLIPTokenizer.from_pretrained("stabilityai/stable-diffusion-2-1-base", subfolder="tokenizer")
 text_encoder = CLIPTextModel.from_pretrained("stabilityai/stable-diffusion-2-1-base", subfolder="text_encoder")
@@ -95,7 +95,7 @@ noise_level = torch.Tensor((noise_level,)).long().to(device)
 noisy_low_res_image = scheduler.add_noise(
     original_samples=sampling_image, noise=low_res_noise, timesteps=torch.Tensor((noise_level,)).long().to(device)
 )
-scheduler.set_timesteps(num_inference_steps=1000)
+scheduler.set_timesteps(num_inference_steps=200)
 for t in tqdm(scheduler.timesteps, ncols=110):
     with torch.no_grad():
         latent_model_input = torch.cat([latents, noisy_low_res_image], dim=1)
