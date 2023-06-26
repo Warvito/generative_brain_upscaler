@@ -23,7 +23,12 @@ def get_test_dataloader(
                 keys=["image"],
                 spatial_size=[160, 224, 160],
             ),
-            transforms.ToTensord(keys=["image"]),
+            transforms.CopyItemsd(keys=["image"], times=1, names=["low_res_image"]),
+            transforms.Resized(
+                keys=["low_res_image"],
+                spatial_size=[32, 32, 32],
+            ),
+            transforms.ToTensord(keys=["image", "low_res_image"]),
         ]
     )
 

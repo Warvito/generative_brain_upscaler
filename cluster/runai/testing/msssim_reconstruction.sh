@@ -1,13 +1,13 @@
 output_dir="/project/outputs/metrics/"
 test_ids="/project/outputs/ids/test.tsv"
-config_file="/project/configs/stage1/aekl_v0.yaml"
-stage1_path="/project/outputs/trained_models/autoencoder.pth"
+config_file="/project/configs/downsampled_stage1/aekl_v0.yaml"
+stage1_path="/project/outputs/trained_models_3d_downsampled/autoencoder.pth"
 seed=42
 batch_size=2
 num_workers=8
 
 runai submit \
-  --name brain-ssim \
+  --name downsampled-ssim \
   --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
   --gpu 1 \
