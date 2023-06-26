@@ -19,7 +19,7 @@ runai submit \
   --volume /nfs/home/wds20/projects/generative_brain_upscaler/:/project/ \
   --volume /nfs/project/AMIGO/Biobank/derivatives/super-res/:/data/ \
   --command -- bash /project/src/bash/start_script.sh \
-      python3 /project/src/python/testing/compute_fid.py \
+      python3 /project/src/python/testing/compute_downsampled_fid.py \
       seed=${seed} \
       sample_dir=${sample_dir} \
       test_ids=${test_ids} \

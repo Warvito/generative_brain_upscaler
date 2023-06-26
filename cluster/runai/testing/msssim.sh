@@ -16,7 +16,7 @@ runai submit \
   --project wds20 \
   --volume /nfs/home/wds20/projects/generative_brain_upscaler/:/project/ \
   --command -- bash /project/src/bash/start_script.sh \
-    python3 /project/src/python/testing/compute_msssim_sample.py \
+    python3 /project/src/python/testing/compute_downsampled_msssim_sample.py \
       seed=${seed} \
       sample_dir=${sample_dir} \
       num_workers=${num_workers}
