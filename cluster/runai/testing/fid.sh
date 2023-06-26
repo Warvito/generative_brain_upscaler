@@ -1,15 +1,16 @@
 seed=42
-sample_dir="/project/outputs/samples_unconditioned/"
+sample_dir="/project/outputs/downsampled_samples_unconditioned/"
 test_ids="/project/outputs/ids/test.tsv"
 num_workers=4
 batch_size=1
 
 runai submit \
-  --name brain-fid \
+  --name downsampled-fid \
   --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
   --gpu 1 \
   --cpu 4 \
+  --memory-limit 256G \
   --large-shm \
   --run-as-user \
   --node-type "A100" \

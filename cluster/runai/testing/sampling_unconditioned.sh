@@ -21,6 +21,7 @@ for i in {0..3}; do
     --backoff-limit 0 \
     --gpu 1 \
     --cpu 4 \
+    --node-type "A100" \
     --large-shm \
     --run-as-user \
     --host-ipc \
