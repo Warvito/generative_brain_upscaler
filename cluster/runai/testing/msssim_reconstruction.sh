@@ -20,7 +20,7 @@ runai submit \
   --volume /nfs/home/wds20/projects/generative_brain_upscaler/:/project/ \
   --volume /nfs/project/AMIGO/Biobank/derivatives/super-res/:/data/ \
   --command -- bash /project/src/bash/start_script.sh \
-      python3 /project/src/python/testing/compute_msssim_reconstruction.py \
+      python3 /project/src/python/testing/compute_downsampled_msssim_reconstruction.py \
       seed=${seed} \
       output_dir=${output_dir} \
       test_ids=${test_ids} \
