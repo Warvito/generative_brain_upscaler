@@ -2,10 +2,10 @@ seed=42
 run_dir="downsampled_aekl_v0_ldm_v0"
 training_ids="/project/outputs/ids/train.tsv"
 validation_ids="/project/outputs/ids/validation.tsv"
-stage1_uri="/project/mlruns/344968604149660181/00181802989a4a64b590acd78bb62ef7/artifacts/final_model"
+stage1_uri="/project/mlruns/289718304593103846/8bb32928ebba416d9de589a20e1fae5f/artifacts/final_model"
 config_file="/project/configs/downsampled_ldm/ldm_v0.yaml"
 scale_factor=0.3
-batch_size=4
+batch_size=8
 n_epochs=25
 eval_freq=1
 num_workers=8
@@ -15,9 +15,9 @@ runai submit \
   --name downsampled-ldm-v0 \
   --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
-  --gpu 2 \
-  --cpu 64 \
-  --memory-limit 256G \
+  --gpu 4 \
+  --cpu 128 \
+  --memory-limit 320G \
   --large-shm \
   --run-as-user \
   --node-type "A100" \

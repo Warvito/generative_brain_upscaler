@@ -111,7 +111,6 @@ def main(args):
             sample = stage1.decode_stage_2_outputs(noise / args.scale_factor)
 
         sample = np.clip(sample.cpu().numpy(), 0, 1)
-        sample = (sample * 255).astype(np.uint8)
 
         sampled_nii = nib.Nifti1Image(sample[0, 0], reference_image.affine, reference_image.header)
         nib.save(sampled_nii, output_dir / f"sample_{i}.nii.gz")
