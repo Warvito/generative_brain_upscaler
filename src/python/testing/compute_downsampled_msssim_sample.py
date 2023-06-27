@@ -47,18 +47,7 @@ def main(args):
         [
             transforms.LoadImaged(keys=["image"]),
             transforms.EnsureChannelFirstd(keys=["image"]),
-            transforms.ScaleIntensityd(keys=["image"], minv=0.0, maxv=1.0),
-            transforms.SpatialCropd(keys=["image"], roi_start=[16, 16, 96], roi_end=[176, 240, 256]),
-            transforms.SpatialPadd(
-                keys=["image"],
-                spatial_size=[160, 224, 160],
-            ),
-            transforms.CopyItemsd(keys=["image"], times=1, names=["low_res_image"]),
-            transforms.Resized(
-                keys=["low_res_image"],
-                spatial_size=[80, 112, 80],
-            ),
-            transforms.ToTensord(keys=["image", "low_res_image"]),
+            transforms.ToTensord(keys=["image"]),
         ]
     )
 
@@ -91,9 +80,9 @@ def main(args):
     ms_ssim_list = []
     pbar = tqdm(enumerate(eval_loader), total=len(eval_loader))
     for step, batch in pbar:
-        img = batch["low_res_image"]
+        img = batch["image"]
         for batch2 in eval_loader_2:
-            img2 = batch2["low_res_image"]
+            img2 = batch2["image"]
             if batch["image_meta_dict"]["filename_or_obj"][0] == batch2["image_meta_dict"]["filename_or_obj"][0]:
                 continue
             ms_ssim_list.append(ms_ssim(img.to(device), img2.to(device)).item())
