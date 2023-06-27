@@ -53,18 +53,7 @@ def main(args):
         [
             transforms.LoadImaged(keys=["image"]),
             transforms.EnsureChannelFirstd(keys=["image"]),
-            transforms.ScaleIntensityd(keys=["image"], minv=0.0, maxv=1.0),
-            transforms.SpatialCropd(keys=["image"], roi_start=[16, 16, 96], roi_end=[176, 240, 256]),
-            transforms.SpatialPadd(
-                keys=["image"],
-                spatial_size=[160, 224, 160],
-            ),
-            transforms.CopyItemsd(keys=["image"], times=1, names=["low_res_image"]),
-            transforms.Resized(
-                keys=["low_res_image"],
-                spatial_size=[80, 112, 80],
-            ),
-            transforms.ToTensord(keys=["image", "low_res_image"]),
+            transforms.ToTensord(keys=["image"]),
         ]
     )
 
@@ -81,7 +70,7 @@ def main(args):
 
     samples_features = []
     for batch in tqdm(samples_loader):
-        img = batch["low_res_image"]
+        img = batch["image"]
         with torch.no_grad():
             outputs = model(img.to(device))
             outputs = F.adaptive_avg_pool3d(outputs, (1, 1, 1)).view(outputs.size(0), -1)  # Global average pooling
