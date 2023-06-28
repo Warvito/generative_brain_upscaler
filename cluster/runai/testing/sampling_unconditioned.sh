@@ -12,9 +12,9 @@ z_size=20
 scale_factor=0.3
 num_inference_steps=200
 
-for i in {0..3}; do
-  start_seed=$((i*250))
-  stop_seed=$(((i+1)*250))
+for i in {0..9}; do
+  start_seed=$((i*100))
+  stop_seed=$(((i+1)*100))
   runai submit \
     --name  downsampled-sampling-${start_seed}-${stop_seed} \
     --image aicregistry:5000/wds20:ldm_brain_upscaler \
@@ -44,4 +44,5 @@ for i in {0..3}; do
         z_size=${z_size} \
         scale_factor=${scale_factor} \
         num_inference_steps=${num_inference_steps}
+  sleep 2
 done
