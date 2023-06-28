@@ -16,7 +16,6 @@ from omegaconf import OmegaConf
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
-from util import get_test_dataloader
 
 
 def parse_args():
@@ -24,10 +23,20 @@ def parse_args():
 
     parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
     parser.add_argument("--output_dir", help="Location to save the output.")
+    parser.add_argument("--stage1_path", help="Path to the .pth model from the stage1.")
+    parser.add_argument("--diffusion_path", help="Path to the .pth model from the diffusion model.")
+    parser.add_argument("--stage1_config_file_path", help="Path to the .pth model from the stage1.")
+    parser.add_argument("--diffusion_config_file_path", help="Path to the .pth model from the diffusion model.")
+    parser.add_argument("--reference_path", help="Path to the reference image.")
+    parser.add_argument("--start_index", type=int, help="Path to the MLFlow artifact of the stage1.")
+    parser.add_argument("--stop_index", type=int, help="Path to the MLFlow artifact of the stage1.")
+    parser.add_argument("--x_size", type=int, default=64, help="Latent space x size.")
+    parser.add_argument("--y_size", type=int, default=64, help="Latent space y size.")
+    parser.add_argument("--z_size", type=int, default=64, help="Latent space z size.")
+    parser.add_argument("--scale_factor", type=float, help="Latent space y size.")
+    parser.add_argument("--num_inference_steps", type=int, help="")
+    parser.add_argument("--noise_level", type=int, help="")
     parser.add_argument("--test_ids", help="Location of file with test ids.")
-    parser.add_argument("--config_file", help="Location of config file.")
-    parser.add_argument("--stage1_path", help="Location of stage1 model.")
-    parser.add_argument("--num_workers", type=int, default=8, help="Number of loader workers")
 
     args = parser.parse_args()
     return args
@@ -40,17 +49,9 @@ def main(args):
     output_dir = Path(args.output_dir)
     output_dir.mkdir(exist_ok=True, parents=True)
 
-    print("Getting data...")
-    test_loader = get_test_dataloader(
-        batch_size=args.batch_size,
-        test_ids=args.test_ids,
-        num_workers=args.num_workers,
-        upper_limit=1000,
-    )
-
     print("Creating model...")
     device = torch.device("cuda")
-    config = OmegaConf.load(args.config_file)
+    config = OmegaConf.load(args.stage1_config_file_path)
     stage1 = AutoencoderKL(**config["stage1"]["params"])
     stage1.load_state_dict(torch.load(args.stage1_path))
     stage1 = stage1.to(device)
@@ -89,7 +90,7 @@ def main(args):
     prompt_embeds = prompt_embeds[0].to(device)
 
     df = pd.read_csv(args.test_ids, sep="\t")
-    df = df[args.start_seed : args.stop_seed]
+    df = df[args.start_index : args.stop_index]
 
     data_dicts = []
     for index, row in df.iterrows():
