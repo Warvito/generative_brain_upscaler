@@ -2,6 +2,8 @@
 import argparse
 from pathlib import Path
 
+import nibabel as nib
+import numpy as np
 import torch
 from generative.networks.nets import AutoencoderKL, DiffusionModelUNet
 from generative.networks.schedulers import DDIMScheduler
@@ -18,6 +20,7 @@ from transformers import CLIPTextModel, CLIPTokenizer
 def parse_args():
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--seed", type=int, help="Path to the MLFlow artifact of the stage1.")
     parser.add_argument("--output_dir", help="Location to save the output.")
     parser.add_argument("--downsampled_dir", help="Location to save the output.")
     parser.add_argument("--stage1_path", help="Path to the .pth model from the stage1.")
@@ -25,10 +28,8 @@ def parse_args():
     parser.add_argument("--stage1_config_file_path", help="Path to the .pth model from the stage1.")
     parser.add_argument("--diffusion_config_file_path", help="Path to the .pth model from the diffusion model.")
     parser.add_argument("--reference_path", help="Path to the reference image.")
-    parser.add_argument("--start_seed", type=int, help="Path to the MLFlow artifact of the stage1.")
-    parser.add_argument("--stop_seed", type=int, help="Path to the MLFlow artifact of the stage1.")
-    parser.add_argument("--prompt", help="Path to the MLFlow artifact of the stage1.")
-    parser.add_argument("--guidance_scale", type=float, default=7.0, help="")
+    parser.add_argument("--start_index", type=int, help="Path to the MLFlow artifact of the stage1.")
+    parser.add_argument("--stop_index", type=int, help="Path to the MLFlow artifact of the stage1.")
     parser.add_argument("--x_size", type=int, default=64, help="Latent space x size.")
     parser.add_argument("--y_size", type=int, default=64, help="Latent space y size.")
     parser.add_argument("--z_size", type=int, default=64, help="Latent space z size.")
@@ -48,7 +49,7 @@ def main(args):
 
     print("Creating model...")
     device = torch.device("cuda")
-    config = OmegaConf.load(args.config_file)
+    config = OmegaConf.load(args.stage1_config_file_path)
     stage1 = AutoencoderKL(**config["stage1"]["params"])
     stage1.load_state_dict(torch.load(args.stage1_path))
     stage1 = stage1.to(device)
@@ -73,7 +74,7 @@ def main(args):
     tokenizer = CLIPTokenizer.from_pretrained("stabilityai/stable-diffusion-2-1-base", subfolder="tokenizer")
     text_encoder = CLIPTextModel.from_pretrained("stabilityai/stable-diffusion-2-1-base", subfolder="text_encoder")
 
-    prompt = ["", "T1-weighted image of a brain."]
+    prompt = ["T1-weighted image of a brain."]
     text_inputs = tokenizer(
         prompt,
         padding="max_length",
@@ -92,16 +93,17 @@ def main(args):
     for sample_path in sorted(list(samples_dir.glob("*.nii.gz"))):
         samples_datalist.append(
             {
-                "image": str(sample_path),
+                "low_res_image": str(sample_path),
             }
         )
     print(f"{len(samples_datalist)} images found in {str(samples_dir)}")
+    samples_datalist = samples_datalist[args.start_index : args.stop_index]
 
     sample_transforms = transforms.Compose(
         [
-            transforms.LoadImaged(keys=["image"]),
-            transforms.EnsureChannelFirstd(keys=["image"]),
-            transforms.ToTensord(keys=["image"]),
+            transforms.LoadImaged(keys=["low_res_image"]),
+            transforms.EnsureChannelFirstd(keys=["low_res_image"]),
+            transforms.ToTensord(keys=["low_res_image"]),
         ]
     )
 
@@ -116,10 +118,14 @@ def main(args):
         num_workers=8,
     )
 
+    reference_image = nib.load(args.reference_path)
+
     for batch in tqdm(samples_loader):
         low_res_image = batch["low_res_image"].to(device)
 
-        latents = torch.randn((1, config["ldm"], args.x_size, args.y_size, args.z_size)).to(device)
+        latents = torch.randn((1, config["ldm"]["params"]["out_channels"], args.x_size, args.y_size, args.z_size)).to(
+            device
+        )
         low_res_noise = torch.randn((1, 1, args.x_size, args.y_size, args.z_size)).to(device)
 
         noise_level = torch.Tensor((args.noise_level,)).long().to(device)
@@ -140,20 +146,13 @@ def main(args):
                 )
                 latents, _ = scheduler.step(noise_pred, t, latents)
 
-        scale_factor = 0.3
         with torch.no_grad():
-            decoded = stage1.decode_stage_2_outputs(latents / scale_factor)
-    #
-    #     ms_ssim_list.append(ms_ssim(x, x_recon))
-    #     filenames.extend(batch["image_meta_dict"]["filename_or_obj"])
-    #
-    # ms_ssim_list = torch.cat(ms_ssim_list, dim=0)
-    #
-    # prediction_df = pd.DataFrame({"filename": filenames, "ms_ssim": ms_ssim_list.cpu()[:, 0]})
-    # prediction_df.to_csv(output_dir / "ms_ssim_reconstruction.tsv", index=False, sep="\t")
-    #
-    # print(f"Mean MS-SSIM: {ms_ssim_list.mean():.6f}")
-    #
+            sample = stage1.decode_stage_2_outputs(latents / args.scale_factor)
+
+        sample = np.clip(sample.cpu().numpy(), 0, 1)
+
+        sampled_nii = nib.Nifti1Image(sample[0, 0], reference_image.affine, reference_image.header)
+        nib.save(sampled_nii, output_dir / f"{batch['low_res_image_meta_dict']['filename_or_obj'][0]}_upscaled.nii.gz")
 
 
 if __name__ == "__main__":
