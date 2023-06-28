@@ -21,12 +21,12 @@ runai submit \
       output_dir=${output_dir}
 
 
-stage1_mlflow_path="/project/mlruns/751866889003045521/a2cb93e5a920445e932ce29e09bd5a82/artifacts/final_model"
-diffusion_mlflow_path="/project/mlruns/275410112256848408/62010f5537c54faf9caef1dfdf3d48ac/artifacts/final_model"
-output_dir="/project/outputs/trained_models_3d_old/"
+stage1_mlflow_path="/project/mlruns/265350922640342393/c9be892664404cd5a261eae91d941b6f/artifacts/final_model"
+diffusion_mlflow_path="/project/mlruns/923773097242416920/f326b39adb80429ea19b3b124a422e0e/artifacts/final_model"
+output_dir="/project/outputs/trained_models_3d_upscaler/"
 
 runai submit \
-  --name upscaler-convert-model-old \
+  --name upscaler-convert-model \
   --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
   --gpu 1 \

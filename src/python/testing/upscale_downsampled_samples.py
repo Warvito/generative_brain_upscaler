@@ -19,6 +19,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--output_dir", help="Location to save the output.")
+    parser.add_argument("--downsampled_dir", help="Location to save the output.")
     parser.add_argument("--stage1_path", help="Path to the .pth model from the stage1.")
     parser.add_argument("--diffusion_path", help="Path to the .pth model from the diffusion model.")
     parser.add_argument("--stage1_config_file_path", help="Path to the .pth model from the stage1.")
@@ -86,7 +87,7 @@ def main(args):
     prompt_embeds = prompt_embeds[0].to(device)
 
     # Samples
-    samples_dir = Path(args.sample_dir)
+    samples_dir = Path(args.downsampled_dir)
     samples_datalist = []
     for sample_path in sorted(list(samples_dir.glob("*.nii.gz"))):
         samples_datalist.append(
@@ -110,7 +111,7 @@ def main(args):
     )
     samples_loader = DataLoader(
         samples_ds,
-        batch_size=16,
+        batch_size=1,
         shuffle=False,
         num_workers=8,
     )
@@ -118,11 +119,10 @@ def main(args):
     for batch in tqdm(samples_loader):
         low_res_image = batch["low_res_image"].to(device)
 
-        latents = torch.randn((1, 3, 80, 112, 80)).to(device)
-        low_res_noise = torch.randn((1, 1, 80, 112, 80)).to(device)
+        latents = torch.randn((1, config["ldm"], args.x_size, args.y_size, args.z_size)).to(device)
+        low_res_noise = torch.randn((1, 1, args.x_size, args.y_size, args.z_size)).to(device)
 
-        noise_level = 1
-        noise_level = torch.Tensor((noise_level,)).long().to(device)
+        noise_level = torch.Tensor((args.noise_level,)).long().to(device)
         noisy_low_res_image = scheduler.add_noise(
             original_samples=low_res_image,
             noise=low_res_noise,
