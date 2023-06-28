@@ -12,7 +12,7 @@ scale_factor=0.3
 noise_level=1
 num_inference_steps=200
 
-for i in {0..9}; do
+for i in 1; do
   start_seed=$((i*100))
   stop_seed=$(((i+1)*100))
   runai submit \

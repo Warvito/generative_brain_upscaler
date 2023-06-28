@@ -1,9 +1,10 @@
-""" Script to upscale the samples of the downsampled LDM."""
+""" Script to upscale the test set """
 import argparse
 from pathlib import Path
 
 import nibabel as nib
 import numpy as np
+import pandas as pd
 import torch
 from generative.networks.nets import AutoencoderKL, DiffusionModelUNet
 from generative.networks.schedulers import DDIMScheduler
@@ -15,26 +16,18 @@ from omegaconf import OmegaConf
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import CLIPTextModel, CLIPTokenizer
+from util import get_test_dataloader
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--seed", type=int, help="Path to the MLFlow artifact of the stage1.")
+    parser.add_argument("--seed", type=int, default=2, help="Random seed to use.")
     parser.add_argument("--output_dir", help="Location to save the output.")
-    parser.add_argument("--downsampled_dir", help="Location to save the output.")
-    parser.add_argument("--stage1_path", help="Path to the .pth model from the stage1.")
-    parser.add_argument("--diffusion_path", help="Path to the .pth model from the diffusion model.")
-    parser.add_argument("--stage1_config_file_path", help="Path to the .pth model from the stage1.")
-    parser.add_argument("--diffusion_config_file_path", help="Path to the .pth model from the diffusion model.")
-    parser.add_argument("--reference_path", help="Path to the reference image.")
-    parser.add_argument("--start_index", type=int, help="Path to the MLFlow artifact of the stage1.")
-    parser.add_argument("--stop_index", type=int, help="Path to the MLFlow artifact of the stage1.")
-    parser.add_argument("--x_size", type=int, default=64, help="Latent space x size.")
-    parser.add_argument("--y_size", type=int, default=64, help="Latent space y size.")
-    parser.add_argument("--z_size", type=int, default=64, help="Latent space z size.")
-    parser.add_argument("--scale_factor", type=float, help="Latent space y size.")
-    parser.add_argument("--num_inference_steps", type=int, help="")
+    parser.add_argument("--test_ids", help="Location of file with test ids.")
+    parser.add_argument("--config_file", help="Location of config file.")
+    parser.add_argument("--stage1_path", help="Location of stage1 model.")
+    parser.add_argument("--num_workers", type=int, default=8, help="Number of loader workers")
 
     args = parser.parse_args()
     return args
@@ -47,9 +40,17 @@ def main(args):
     output_dir = Path(args.output_dir)
     output_dir.mkdir(exist_ok=True, parents=True)
 
+    print("Getting data...")
+    test_loader = get_test_dataloader(
+        batch_size=args.batch_size,
+        test_ids=args.test_ids,
+        num_workers=args.num_workers,
+        upper_limit=1000,
+    )
+
     print("Creating model...")
     device = torch.device("cuda")
-    config = OmegaConf.load(args.stage1_config_file_path)
+    config = OmegaConf.load(args.config_file)
     stage1 = AutoencoderKL(**config["stage1"]["params"])
     stage1.load_state_dict(torch.load(args.stage1_path))
     stage1 = stage1.to(device)
@@ -87,32 +88,42 @@ def main(args):
     prompt_embeds = text_encoder(text_input_ids.squeeze(1))
     prompt_embeds = prompt_embeds[0].to(device)
 
-    # Samples
-    samples_dir = Path(args.downsampled_dir)
-    samples_datalist = []
-    for sample_path in sorted(list(samples_dir.glob("*.nii.gz"))):
-        samples_datalist.append(
+    df = pd.read_csv(args.test_ids, sep="\t")
+    df = df[args.start_seed : args.stop_seed]
+
+    data_dicts = []
+    for index, row in df.iterrows():
+        data_dicts.append(
             {
-                "low_res_image": str(sample_path),
+                "image": str(row["image"]),
             }
         )
-    print(f"{len(samples_datalist)} images found in {str(samples_dir)}")
-    samples_datalist = samples_datalist[args.start_index : args.stop_index]
 
-    sample_transforms = transforms.Compose(
+    eval_transforms = transforms.Compose(
         [
-            transforms.LoadImaged(keys=["low_res_image"]),
-            transforms.EnsureChannelFirstd(keys=["low_res_image"]),
-            transforms.ToTensord(keys=["low_res_image"]),
+            transforms.LoadImaged(keys=["image"]),
+            transforms.EnsureChannelFirstd(keys=["image"]),
+            transforms.ScaleIntensityd(keys=["image"], minv=0.0, maxv=1.0),
+            transforms.SpatialCropd(keys=["image"], roi_start=[16, 16, 96], roi_end=[176, 240, 256]),
+            transforms.SpatialPadd(
+                keys=["image"],
+                spatial_size=[160, 224, 160],
+            ),
+            transforms.CopyItemsd(keys=["image"], times=1, names=["low_res_image"]),
+            transforms.Resized(
+                keys=["low_res_image"],
+                spatial_size=[80, 112, 80],
+            ),
+            transforms.ToTensord(keys=["image", "low_res_image"]),
         ]
     )
 
-    samples_ds = Dataset(
-        data=samples_datalist,
-        transform=sample_transforms,
+    eval_ds = Dataset(
+        data=data_dicts,
+        transform=eval_transforms,
     )
-    samples_loader = DataLoader(
-        samples_ds,
+    eval_loader = DataLoader(
+        eval_ds,
         batch_size=1,
         shuffle=False,
         num_workers=8,
@@ -120,7 +131,7 @@ def main(args):
 
     reference_image = nib.load(args.reference_path)
 
-    for batch in tqdm(samples_loader):
+    for batch in tqdm(eval_loader):
         low_res_image = batch["low_res_image"].to(device)
 
         latents = torch.randn((1, config["ldm"]["params"]["out_channels"], args.x_size, args.y_size, args.z_size)).to(
