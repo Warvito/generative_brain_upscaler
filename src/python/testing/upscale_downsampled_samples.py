@@ -35,6 +35,7 @@ def parse_args():
     parser.add_argument("--z_size", type=int, default=64, help="Latent space z size.")
     parser.add_argument("--scale_factor", type=float, help="Latent space y size.")
     parser.add_argument("--num_inference_steps", type=int, help="")
+    parser.add_argument("--noise_level", type=int, help="")
 
     args = parser.parse_args()
     return args

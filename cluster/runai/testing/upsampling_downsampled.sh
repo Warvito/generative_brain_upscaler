@@ -12,9 +12,9 @@ scale_factor=0.3
 noise_level=1
 num_inference_steps=200
 
-for i in 1; do
-  start_seed=$((i*100))
-  stop_seed=$(((i+1)*100))
+for i in 0; do
+  start_index=$((i*100))
+  stop_index=$(((i+1)*100))
   runai submit \
     --name  upscaler-sampling-${start_seed}-${stop_seed} \
     --image aicregistry:5000/wds20:ldm_brain_upscaler \
@@ -28,7 +28,7 @@ for i in 1; do
     --project wds20 \
     --volume /nfs/home/wds20/projects/generative_brain_upscaler/:/project/ \
     --command -- bash /project/src/bash/start_script.sh \
-      python3 /project/src/python/testing/sample_images.py \
+      python3 /project/src/python/testing/upscale_downsampled_samples.py \
         downsampled_dir=${downsampled_dir} \
         output_dir=${output_dir} \
         stage1_path=${stage1_path} \
@@ -36,8 +36,8 @@ for i in 1; do
         stage1_config_file_path=${stage1_config_file_path} \
         diffusion_config_file_path=${diffusion_config_file_path} \
         reference_path=${reference_path} \
-        start_seed=${start_seed} \
-        stop_seed=${stop_seed} \
+        start_index=${start_index} \
+        stop_index=${stop_index} \
         noise_level=${noise_level} \
         x_size=${x_size} \
         y_size=${y_size} \
