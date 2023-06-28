@@ -164,7 +164,7 @@ def main(args):
         sample = np.clip(sample.cpu().numpy(), 0, 1)
 
         sampled_nii = nib.Nifti1Image(sample[0, 0], reference_image.affine, reference_image.header)
-        img_path = Path(batch["low_res_image_meta_dict"]["filename_or_obj"][0])
+        img_path = Path(batch["image"]["filename_or_obj"][0])
         nib.save(sampled_nii, output_dir / f"{img_path.stem}_upscaled.nii.gz")
 
 

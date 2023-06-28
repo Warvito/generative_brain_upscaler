@@ -49,7 +49,7 @@ done
 
 
 seed=42
-output_dir="/project/outputs/samples_unconditioned_upsampled/"
+output_dir="/project/outputs/testset_unconditioned_upsampled/"
 stage1_path="/project/outputs/trained_models_3d_upscaler/autoencoder.pth"
 diffusion_path="/project/outputs/trained_models_3d_upscaler/diffusion_model.pth"
 stage1_config_file_path="/project/configs/upsampler_stage1/aekl_v0.yaml"
@@ -61,12 +61,13 @@ z_size=80
 scale_factor=0.3
 noise_level=1
 num_inference_steps=200
+test_ids="/project/outputs/ids/test.tsv"
 
 for i in 0; do
   start_index=$((i*100))
   stop_index=$(((i+1)*100))
   runai submit \
-    --name  upscaler-sampling-${start_index}-${stop_index} \
+    --name  upscaler-testset-${start_index}-${stop_index} \
     --image aicregistry:5000/wds20:ldm_brain_upscaler \
     --backoff-limit 0 \
     --gpu 1 \
@@ -79,7 +80,7 @@ for i in 0; do
     --volume /nfs/home/wds20/projects/generative_brain_upscaler/:/project/ \
     --volume /nfs/project/AMIGO/Biobank/derivatives/super-res/:/data/ \
     --command -- bash /project/src/bash/start_script.sh \
-      python3 /project/src/python/testing/upscale_downsampled_samples.py \
+      python3 /project/src/python/testing/upscale_downsampled_test_set.py \
         seed=${seed} \
         output_dir=${output_dir} \
         stage1_path=${stage1_path} \
@@ -94,5 +95,6 @@ for i in 0; do
         y_size=${y_size} \
         z_size=${z_size} \
         scale_factor=${scale_factor} \
+        test_ids=${test_ids} \
         num_inference_steps=${num_inference_steps}
 done
