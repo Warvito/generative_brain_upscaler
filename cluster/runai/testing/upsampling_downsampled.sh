@@ -63,11 +63,11 @@ noise_level=1
 num_inference_steps=200
 test_ids="/project/outputs/ids/test.tsv"
 
-for i in 0; do
+for i in {0..9}; do
   start_index=$((i*100))
   stop_index=$(((i+1)*100))
   runai submit \
-    --name  upscaler-testset-${start_index}-${stop_index}-1 \
+    --name  upscaler-testset-${start_index}-${stop_index} \
     --image aicregistry:5000/wds20:ldm_brain_upscaler \
     --backoff-limit 0 \
     --gpu 1 \
@@ -79,7 +79,6 @@ for i in 0; do
     --project wds20 \
     --volume /nfs/home/wds20/projects/generative_brain_upscaler/:/project/ \
     --volume /nfs/project/AMIGO/Biobank/derivatives/super-res/:/data/ \
-    --command -- sleep infinity
     --command -- bash /project/src/bash/start_script.sh \
       python3 /project/src/python/testing/upscale_downsampled_test_set.py \
         seed=${seed} \
