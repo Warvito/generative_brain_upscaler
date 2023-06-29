@@ -48,11 +48,6 @@ def main(args):
             transforms.LoadImaged(keys=["image"]),
             transforms.EnsureChannelFirstd(keys=["image"]),
             transforms.ScaleIntensityd(keys=["image"], minv=0.0, maxv=1.0),
-            transforms.SpatialCropd(keys=["image"], roi_start=[16, 16, 96], roi_end=[176, 240, 256]),
-            transforms.SpatialPadd(
-                keys=["image"],
-                spatial_size=[160, 224, 160],
-            ),
             transforms.ToTensord(keys=["image"]),
         ]
     )
