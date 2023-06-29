@@ -53,6 +53,7 @@ def main(args):
         [
             transforms.LoadImaged(keys=["image"]),
             transforms.EnsureChannelFirstd(keys=["image"]),
+            transforms.ScaleIntensityd(keys=["image"], minv=0.0, maxv=1.0),
             transforms.ToTensord(keys=["image"]),
         ]
     )
@@ -63,9 +64,9 @@ def main(args):
     )
     samples_loader = DataLoader(
         samples_ds,
-        batch_size=16,
+        batch_size=args.batch_size,
         shuffle=False,
-        num_workers=8,
+        num_workers=args.num_workers,
     )
 
     samples_features = []
@@ -80,7 +81,7 @@ def main(args):
 
     # Test set
     test_loader = get_test_dataloader(
-        batch_size=16,
+        batch_size=args.batch_size,
         test_ids=args.test_ids,
         num_workers=args.num_workers,
         upper_limit=1000,
@@ -88,7 +89,7 @@ def main(args):
 
     test_features = []
     for batch in tqdm(test_loader):
-        img = batch["low_res_image"]
+        img = batch["image"]
         with torch.no_grad():
             outputs = model(img.to(device))
             outputs = F.adaptive_avg_pool3d(outputs, 1).squeeze(-1).squeeze(-1).squeeze(-1)  # Global average pooling
