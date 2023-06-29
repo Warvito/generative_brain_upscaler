@@ -27,7 +27,7 @@ sample_dir="/project/outputs/samples_unconditioned_upsampled/"
 num_workers=8
 
 runai submit \
-  --name downsampled-ssim-sample \
+  --name upscaler-ssim-sample \
   --image aicregistry:5000/wds20:ldm_brain_upscaler \
   --backoff-limit 0 \
   --gpu 1 \
