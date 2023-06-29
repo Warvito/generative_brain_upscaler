@@ -57,7 +57,7 @@ def main(args):
     for batch in tqdm(test_loader):
         img = batch["image"]
         img_synthetic = sample_transforms(
-            {"image": samples_dir / f"{Path(batch['image_meta_dict']['filename_or_obj'][0]).stem[:-3]}_upscaled.nii.gz"}
+            {"image": samples_dir / f"{Path(batch['image_meta_dict']['filename_or_obj'][0]).stem[:-4]}_upscaled.nii.gz"}
         )["image"].unsqueeze(1)
 
         psnr_value = psnr_metric(img, img_synthetic)
