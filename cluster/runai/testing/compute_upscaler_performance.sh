@@ -17,7 +17,6 @@ runai submit \
   --project wds20 \
   --volume /nfs/home/wds20/projects/generative_brain_upscaler/:/project/ \
   --volume /nfs/project/AMIGO/Biobank/derivatives/super-res/:/data/ \
-  --command -- sleep infinity
   --command -- bash /project/src/bash/start_script.sh \
     python3 /project/src/python/testing/compute_upscaler_performance.py \
       seed=${seed} \
