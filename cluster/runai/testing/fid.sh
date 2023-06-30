@@ -1,8 +1,8 @@
 seed=42
 sample_dir="/project/outputs/downsampled_samples_unconditioned/"
 test_ids="/project/outputs/ids/test.tsv"
-num_workers=4
-batch_size=1
+num_workers=8
+batch_size=16
 
 runai submit \
   --name downsampled-fid \
